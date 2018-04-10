@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Babylon</title>
+</head>
+<body>
+<canvas width="800" height="600" id="viewport"></canvas>
+<script src="lib/babylon.custom.js"></script>
+<script>
+
+    function randPos() {
+        var r = Math.random() * 200 + 100;
+        var alpha = Math.PI * 2 * Math.random();
+        var beta = Math.PI / 6 * Math.random() + Math.PI / 2.5;
+        return [
+            Math.cos(alpha) * Math.sin(beta) * r,
+            Math.cos(beta) * r + 100,
+            Math.sin(alpha) * Math.sin(beta) * r
+        ];
+    }
+    var canvas = document.getElementById('viewport');
+    var engine = new BABYLON.Engine(canvas, true);
+    var scene = new BABYLON.Scene(engine);
+
+    var camera = new BABYLON.ArcRotateCamera('camera', 0, 0, 200, new BABYLON.Vector3(0, 100, 0), scene);
+    camera.fov = 50 * Math.PI / 180;
+    camera.setPosition(new BABYLON.Vector3(0, 150, 200))
+    camera.attachControl(canvas, false);
+
+    var room = BABYLON.Mesh.CreateBox("box", 2.0, scene, false, BABYLON.Mesh.DOUBLESIDE);
+    room.receiveShadows = true;
+    room.scaling.set(400, 200, 400);
+    room.position.y = 200;
+
+    var light1 = new BABYLON.PointLight('p1', new BABYLON.Vector3(100, 300, 100), scene);
+    light1.range = 800;
+    light1.diffuse = new BABYLON.Color3(0.1, 0.1, 1);
+    var shadowGenerator1 = new BABYLON.ShadowGenerator(1024, light1);
+
+    var light2 = new BABYLON.PointLight('p1', new BABYLON.Vector3(-160, 250, 200), scene);
+    light2.diffuse = new BABYLON.Color3(0.1, 1, 0.1);
+    light2.range = 800;
+    var shadowGenerator2 = new BABYLON.ShadowGenerator(1024, light2);
+
+    var cubes = [];
+    for (var i = 0; i < 2000; i++) {
+        var cube = BABYLON.Mesh.CreateBox("box", 2.0, scene, true);
+        cubes.push(cube);
+        cube.receiveShadows = true;
+        cube.diffuseColor = new BABYLON.Color3(Math.random(), Math.random(), Math.random())
+        cube.moveSpeed = Math.random();
+        cube.rotateSpeed = Math.random() * 5;
+        cube.center = new BABYLON.Vector3(0, cube.position.y, 0);
+
+        var pos = randPos();
+        cube.position.set(pos[0], pos[1], pos[2]);
+
+        shadowGenerator1.getShadowMap().renderList.push(cube);
+        shadowGenerator2.getShadowMap().renderList.push(cube);
+    }
+    BABYLON.SceneLoader.Append("./assets/models/SambaDancing/", "SambaDancing.gltf", scene);
+
+
+    engine.runRenderLoop(function() {
+        var upVector = new BABYLON.Vector3(0, 1, 0);
+        cubes.forEach(function (cube) {
+            cube.rotateAround(cube.center, upVector, cube.moveSpeed * engine.getDeltaTime());
+        });
+
+        scene.render();
+    });
+    </script>
+</body>
+</html>
